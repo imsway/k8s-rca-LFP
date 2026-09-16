@@ -1,0 +1,56 @@
+# Overrides for open-telemetry/opentelemetry-demo (chart 0.41.1, appVersion 3.0.0).
+# Verified against the actual chart output via `helm show values` / `helm template`
+# rather than assumed -- see docs/architecture.md for how these were derived.
+#
+# Goals:
+#  1. Disable components that only exist for the chart's own "AI shopping
+#     assistant" demo (agent/chatbot/mcp) and other unrelated extras
+#     (telemetry-docs, opamp-server) -- they add ~1.7Gi of memory limits and
+#     have nothing to do with our RCA target application.
+#  2. Disable opensearch (~1.1Gi+) -- we use Loki instead (see loki.yaml),
+#     reached via a native OTLP log export added to the collector config below.
+#  3. Expose frontend-proxy on a NodePort so the shop UI (and, via its own
+#     internal routing, Grafana/Jaeger/flagd-ui) is reachable at
+#     http://localhost:30800 without port-forwarding.
+
+components:
+  agent:
+    enabled: false
+  chatbot:
+    enabled: false
+  mcp:
+    enabled: false
+  telemetry-docs:
+    enabled: false
+  opamp-server:
+    enabled: false
+
+  frontend-proxy:
+    service:
+      type: NodePort
+      nodePort: 30800
+
+opensearch:
+  enabled: false
+
+# Route the collector's logs pipeline to Loki (OTLP-native ingestion) instead
+# of opensearch, and drop the now-dangling opamp extension / firepit exporter
+# so the collector doesn't spend cycles retrying connections to disabled
+# components. Helm merges maps key-by-key, so adding `otlphttp/loki` here
+# does not remove the exporters already defined by the chart (otlp_grpc/jaeger,
+# otlp_http/prometheus, etc.) -- only the `pipelines.*.exporters` *lists* are
+# fully replaced, which is what we want.
+opentelemetry-collector:
+  config:
+    exporters:
+      otlphttp/loki:
+        endpoint: http://loki:3100/otlp
+        tls:
+          insecure: true
+    service:
+      extensions: [health_check]
+      pipelines:
+        logs:
+          exporters: [otlphttp/loki, debug]
+        profiles:
+          exporters: [debug]

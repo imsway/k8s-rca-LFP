@@ -1,0 +1,20 @@
+# kind cluster config for the K8s RCA Agent project.
+# Maps NodePort services straight to host ports so the agent (running locally,
+# not in-cluster) can reach Prometheus/Grafana/Jaeger/Loki/the shop UI without
+# fragile `kubectl port-forward` sessions.
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+name: rca-agent
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30090 # Prometheus (PromQL API)
+        hostPort: 30090
+      - containerPort: 30080 # Grafana (dashboards, served at /grafana)
+        hostPort: 30080
+      - containerPort: 30686 # Jaeger query (UI + trace API, served at /jaeger/ui)
+        hostPort: 30686
+      - containerPort: 30100 # Loki (LogQL API + OTLP log ingestion)
+        hostPort: 30100
+      - containerPort: 30800 # frontend-proxy (shop UI; also proxies to grafana/jaeger/flagd-ui)
+        hostPort: 30800

@@ -1,0 +1,40 @@
+# Namespace-scoped, read-only. This is the primary sandbox boundary: everything
+# the agent's Kubernetes tools can do is enumerated here. No create/update/patch/
+# delete/exec/deletecollection on anything, and no access to Secrets at all
+# (even read access to Secrets is a data-exfiltration vector we don't need —
+# nothing in the RCA investigation requires reading credential material).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rca-agent-readonly
+  namespace: otel-demo
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - events
+      - configmaps
+      - resourcequotas
+      - limitranges
+      - replicationcontrollers
+      - persistentvolumeclaims
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - pods
+    verbs: ["get", "list"]

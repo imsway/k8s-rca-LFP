@@ -1,0 +1,49 @@
+# Minimal single-binary Loki for local log storage. No object storage, no
+# read/write/backend split, no query-result caching -- this is a demo-scale
+# deployment, not a production one. `useTestSchema: true` gives Loki a
+# working schema_config with filesystem storage and no persistence, which is
+# exactly what we want for a cluster that gets torn down between demo runs.
+#
+# Verified with `helm template` against grafana/loki chart 7.3.0 before use
+# (this chart's defaults are oriented toward production "SimpleScalable"
+# deployments and will pull in minio/memcached/multiple StatefulSets unless
+# explicitly turned off, as below).
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  useTestSchema: true
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+
+singleBinary:
+  replicas: 1
+  resources:
+    limits:
+      memory: 256Mi
+
+minio:
+  enabled: false
+gateway:
+  enabled: false
+test:
+  enabled: false
+lokiCanary:
+  enabled: false
+resultsCache:
+  enabled: false
+chunksCache:
+  enabled: false
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+monitoring:
+  selfMonitoring:
+    enabled: false
+  serviceMonitor:
+    enabled: false

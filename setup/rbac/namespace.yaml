@@ -1,0 +1,11 @@
+# The demo app and the agent's own service account both live here, so that
+# a namespace-scoped review of "what can the agent touch" only has one place
+# to look. The RBAC ClusterRole below is still cluster-scoped for `get/list`
+# on cluster-level objects (nodes) but every namespaced verb is bound only
+# via a RoleBinding in this namespace, not a ClusterRoleBinding.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otel-demo
+  labels:
+    app.kubernetes.io/part-of: k8s-rca-agent

@@ -1,0 +1,14 @@
+# Deliberately separate from role.yaml. `nodes` is cluster-scoped (no
+# namespaced equivalent), so reading node conditions/capacity for RCA
+# ("is the node under memory/disk pressure?") requires a ClusterRole. We
+# scope it to ONLY `nodes` so this cluster-wide grant can't be leveraged to
+# read anything namespaced outside otel-demo -- that boundary stays in
+# role.yaml/rolebinding.yaml.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rca-agent-nodes-readonly
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
